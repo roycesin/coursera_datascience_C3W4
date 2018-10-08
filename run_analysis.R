@@ -1,5 +1,6 @@
 run_analysis <- function(){
     library(dplyr)
+    
     #Import Data
     test_sub <- read.table("./UCI HAR Dataset/test/subject_test.txt")
     test_x <- read.table("./UCI HAR Dataset/test/x_test.txt")
@@ -12,7 +13,8 @@ run_analysis <- function(){
     features_labels <- read.table("./UCI HAR Dataset/features.txt") #features label
     activity_labels <- read.table("./UCI HAR Dataset/activity_labels.txt") #activity label
     
-    #Separate Feature Names in to Columns
+    #Separate feature Names in to Columns
+    # "tBodyAcc-mad()-X" to "tBodyAcc" "mad()" "X"
     names(features_labels)[1] <- "id"
     features_labels <- separate(features_labels, V2,c("sensor","measure","dimension"),sep="-")
     
@@ -27,7 +29,7 @@ run_analysis <- function(){
     
     names(activity_labels) <- c("id","activity")
     
-    #Add Subjects and Activity
+    #Combine Subjects and Activity data
     test_x <- cbind(test_x, test_y, test_sub)
     train_x <- cbind(train_x, train_y, train_sub)
     
@@ -40,23 +42,22 @@ run_analysis <- function(){
         merge(features_labels,by.x="feature_id",by.y="id") %>%
         merge(activity_labels,by.x="activity_id",by.y="id") %>%
         select(-activity_id,-feature_id)
-    
-    #Keep only Mean and Standard Deviation
-    filtered_data <- filter(tidy_data, measure== "mean()" | measure=="std()")
-    write.table(filtered_data,"./tidy_HAR_dataset.txt")
-        
-    #Calculate Average for each subject, variable, and activity
-    avg_data <- group_by(filtered_data,subject_id,activity,sensor,measure,dimension) %>%
-        summarize(average = mean(value))
-    write.table(avg_data,"./tidy_HAR_average_dataset.txt")
-        
-    #cleanup
+
+    #Cleanup Uncessary objects
     rm(test_sub,test_x,test_y)
     rm(train_sub,train_x,train_y)
     rm(features_labels,activity_labels)
+    
+    #Keep only Mean and Standard Deviation and output file
+    filtered_data <- filter(tidy_data, measure== "mean()" | measure=="std()")
+    write.table(filtered_data,"./tidy_HAR_dataset.txt")
+
+    #Cleanup Uncessary objects
     rm(tidy_data)
+    
+    #Calculate Average for each subject, variable, and activity and output file
+    avg_data <- group_by(filtered_data,subject_id,activity,sensor,measure,dimension) %>%
+        summarize(average = mean(value))
+    write.table(avg_data,"./tidy_HAR_average_dataset.txt")
 }
 
-library(dataMaid)
-makeCodebook(filtered_data)
-makeCodebook(avg_data)
