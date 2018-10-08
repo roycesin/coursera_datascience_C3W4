@@ -1,6 +1,7 @@
 run_analysis <- function(){
     library(dplyr)
-    
+    library(tidyr)
+
     #Import Data
     test_sub <- read.table("./UCI HAR Dataset/test/subject_test.txt")
     test_x <- read.table("./UCI HAR Dataset/test/x_test.txt")
@@ -15,8 +16,8 @@ run_analysis <- function(){
     
     #Separate feature Names in to Columns
     # "tBodyAcc-mad()-X" to "tBodyAcc" "mad()" "X"
-    names(features_labels)[1] <- "id"
-    features_labels <- separate(features_labels, V2,c("sensor","measure","dimension"),sep="-")
+    names(features_labels) <- c("id","variable")
+    features_labels <- separate(features_labels, variable,c("sensor","measure","dimension"),sep="-")
     
     #Tidy Column Names
     names(test_x) <- sapply(colnames(test_x),function(x)sub("V","",x))
@@ -50,14 +51,15 @@ run_analysis <- function(){
     
     #Keep only Mean and Standard Deviation and output file
     filtered_data <- filter(tidy_data, measure== "mean()" | measure=="std()")
-    write.table(filtered_data,"./tidy_HAR_dataset.txt")
-
+    
     #Cleanup Uncessary objects
     rm(tidy_data)
     
     #Calculate Average for each subject, variable, and activity and output file
-    avg_data <- group_by(filtered_data,subject_id,activity,sensor,measure,dimension) %>%
-        summarize(average = mean(value))
-    write.table(avg_data,"./tidy_HAR_average_dataset.txt")
+    avg_data <- filtered_data %>% 
+        group_by(subject_id,activity,sensor,measure,dimension) %>%
+        dplyr::summarize(average = mean(value))
+
+    write.table(avg_data, file="./tidy_HAR_average_dataset.txt",row.names=FALSE)
 }
 
